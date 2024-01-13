@@ -1,6 +1,17 @@
 import csv
+import logging
+from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
+
+
+logging.basicConfig(filename='log.txt', level=logging.INFO)
+
+
+def generate_images(csv_file):
+    user_info_list = read_user_info_from_csv(csv_file)
+    for user_info in user_info_list:
+        add_text_to_image(user_info)
 
 
 def read_user_info_from_csv(csv_file):
@@ -13,42 +24,69 @@ def read_user_info_from_csv(csv_file):
     return user_info_list
 
 
+def add_text_to_image(user_info, output_folder="badge"):
+    username, club_info, division_info, option_info, remark, option = user_info
 
-def add_text_to_image(image_path, user_info):
-    # Open the image
+    option_A = 'one day ticket without meal'
+    option_B = 'one day ticket with meal'
+    option_C = 'two day ticket with meal'
+    option = option.strip().replace("'", "")
+    print(f"Option value: {option}, type: {type(option)}")
+
+    if not option:
+        logging.info(f"Skipping row for user {username} due to empty option")
+        return
+
+    if option == option_A:
+        image_path = 'optionA.jpg'
+    elif option == option_B:
+        image_path = 'optionB.jpg'
+    elif option == option_C:
+        image_path = 'optionC.jpg'
+    else:
+        raise ValueError(f"Invalid option: {option}")
+
     image = Image.open(image_path)
 
-    # Get the size of the image
     image_width, image_height = image.size
     print(f"Image size: {image_width} x {image_height}")
 
-    # Initialize ImageDraw
     draw = ImageDraw.Draw(image)
 
-    # Set font and size 
     font_path = "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"
     font_size = 20
     font = ImageFont.truetype(font_path, font_size)
 
-    # Unpack user_info tuple
-    username, club_info, division_info, option_info, remark = user_info
-
     text_positions = [
-        (1000, 400, username),  
-        (1000, 450, club_info),  #
-        (1000, 500, division_info),  
-        (1000, 550, option_info),  
-        (1000, 600, remark), 
-        ]
-    
-    # Add text to image
-    for x, y, text in text_positions:
-        draw.text(
-            (x, y), text, font=font, fill=(0, 0, 0)
-            )  # You can adjust the fill color
+        (420, username),
+        (450, club_info),
+        (500, division_info),
+        (550, option_info),
+        (600, remark),
+        (100, '100'),
+        (200, '200'),
+        (300, '300'),
+        (400, '400'),
+        (500, '500'),
+        (600, '600'),
+        (700, '700'),
+        (800, '800'),
+        (900, '900'),
+        (1000, '1000'),
+        (1100, '1100'),
+        (1174, '1174')
+    ]
 
-    # Save or display the modified image for each row
-    output_image_path = f"output_image_{username}.jpg"  # Using username for unique filenames
+    # # Add text to image
+    for y, text in text_positions:
+        text_width, text_height = [1, 1]
+        x = (image_width - text_width) / 2
+        draw.text((x, y - text_height / 2), text, font=font, fill=(0, 0, 0), anchor="mm")
+        output_folder_path = Path(output_folder)
+
+    output_folder_path.mkdir(parents=True, exist_ok=True)
+
+    output_image_path = output_folder_path / f"{username}.jpg"
     image.save(output_image_path)
     image.show()
 
@@ -57,7 +95,4 @@ def add_text_to_image(image_path, user_info):
 csv_file_path = "user_info.csv"
 user_info_list = read_user_info_from_csv(csv_file_path)
 
-# Process all rows from the CSV file
-for user_info_row in user_info_list:
-    add_text_to_image("input_image.jpg", user_info_row)
-    print(user_info_row)
+generate_images(csv_file_path)
